@@ -1,0 +1,128 @@
+/* PatternFly 6 includes Red Hat fonts automatically */
+
+/* Root styles with PatternFly 6 design tokens */
+:root {
+  /* Use PatternFly 6 semantic tokens for typography */
+  font-family: var(--pf-t--global--font--family--body);
+  color: var(--pf-t--global--text--color--regular);
+  background-color: var(--pf-t--global--background--color--primary--default);
+}
+
+/* Let PatternFly control base font size for responsive design */
+html {
+  /* PatternFly 6 sets the base font size responsively */
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5; /* Better line height for readability */
+}
+
+code {
+  font-family: var(--pf-t--global--font--family--mono);
+}
+
+/* Ensure PatternFly components use semantic design tokens */
+.pf-v6-c-page,
+.pf-v6-c-masthead,
+.pf-v6-c-page__sidebar,
+.pf-v6-c-nav,
+.pf-v6-c-toolbar {
+  font-size: var(--pf-t--global--font--size--body--default);
+}
+
+/* Use PatternFly 6 semantic tokens for button sizing */
+.pf-v6-c-button {
+  font-size: var(--pf-t--global--font--size--body--default);
+  padding: var(--pf-t--global--spacer--sm) var(--pf-t--global--spacer--md);
+}
+
+/* Adjust navigation item sizing */
+.pf-v6-c-nav__link {
+  font-size: var(--pf-t--global--font--size--body--default);
+  padding: var(--pf-t--global--spacer--xs) var(--pf-t--global--spacer--md);
+}
+
+/* Reduce all padding/margin for tighter layout */
+.pf-v6-c-page__main {
+  padding: 0 !important;
+}
+
+.pf-v6-c-page__main-section {
+  padding-top: var(--pf-t--global--spacer--md) !important;
+}
+
+/* Dark theme support - add class to html element */
+.pf-v6-theme-dark {
+  color-scheme: dark;
+}
+
+/* Skip navigation styles for accessibility */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: var(--pf-t--global--background--color--primary--default);
+  color: var(--pf-t--global--text--color--regular);
+  padding: var(--pf-t--global--spacer--sm);
+  text-decoration: none;
+  border: 1px solid var(--pf-t--global--border--color--default);
+  border-radius: 4px;
+  z-index: 1000;
+  font-size: var(--pf-t--global--font--size--sm);
+  font-weight: 500;
+  transition: top 0.3s;
+}
+
+.skip-link:focus,
+.skip-link:active {
+  top: 6px;
+}
+
+/* Screen reader only class - visually hidden but accessible to screen readers */
+.pf-v6-screen-reader {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Fix: collapsed ExpandableSection content still contributes to scrollHeight because PF6 uses
+   max-height:0 + visibility:hidden without overflow:hidden, causing phantom whitespace and scrollbar */
+.pf-v6-c-expandable-section:not(.pf-m-expanded) .pf-v6-c-expandable-section__content {
+  overflow: hidden;
+}
+
+/* High contrast mode improvements */
+@media (prefers-contrast: high) {
+  .pf-v6-c-badge {
+    border: 2px solid currentColor;
+  }
+
+  .pf-v6-c-progress__bar {
+    border: 1px solid currentColor;
+  }
+}
+
+.chat-header {
+  background-color: #0084ff !important;
+  border-top-left-radius: 10px !important;
+  border-top-right-radius: 10px !important;
+  border-bottom-left-radius: 0px !important;
+  border-bottom-right-radius: 0px !important;
+  padding: 10px !important;
+}
+
+.chat-header-title {
+  color: #ffffff !important;
+  width: 100%;
+  text-align: center;
+  padding-top: 0px;
+}

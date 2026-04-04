@@ -1,0 +1,192 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app: backend
+    component: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+        component: api
+    spec:
+      initContainers:
+        - name: wait-for-database
+          image: postgres:16-alpine
+          command:
+            - sh
+            - -c
+            - |
+              until psql "postgresql://litemaas_admin:${PG_ADMIN_PASSWORD}@postgres:5432/litemaas_db" -c '\q' 2>/dev/null; do
+                echo "Waiting for database..."
+                sleep 2
+              done
+              echo "Database is ready!"
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: database-url
+      containers:
+        - name: backend
+          image: quay.io/rh-aiservices-bu/litemaas-backend:${LITEMAAS_VERSION}
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            # Database Configuration
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: database-url
+
+            # Server Configuration
+            - name: HOST
+              value: '0.0.0.0'
+            - name: PORT
+              value: '8080'
+            - name: NODE_ENV
+              value: 'production'
+            - name: LOG_LEVEL
+              value: 'info'
+
+            # CORS Configuration
+            - name: CORS_ORIGIN
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: cors-origin
+
+            # JWT Configuration
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: jwt-secret
+            - name: JWT_EXPIRES_IN
+              value: '24h'
+
+            # Authentication Provider ('openshift' or 'oidc')
+            # Uncomment and change to 'oidc' for standard OpenID Connect providers
+            # - name: AUTH_PROVIDER
+            #   value: 'oidc'
+            # - name: OIDC_GROUPS_CLAIM
+            #   value: 'groups'
+            # - name: OIDC_SCOPES
+            #   value: 'openid profile email'
+
+            # OAuth Configuration
+            - name: OAUTH_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: oauth-client-id
+            - name: OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: oauth-client-secret
+            - name: OAUTH_ISSUER
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: oauth-issuer
+            - name: OAUTH_CALLBACK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: oauth-callback-url
+
+            # Admin Configuration
+            - name: ADMIN_API_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: admin-api-keys
+
+            # LiteLLM Integration
+            - name: LITELLM_API_URL
+              value: 'https://litellm-${NAMESPACE}.${CLUSTER_DOMAIN_NAME}'
+            - name: LITELLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: litellm-api-key
+            - name: LITELLM_MASTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: litellm-master-key
+            - name: LITELLM_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: litellm-database-url
+
+            # Backup Storage Path
+            - name: BACKUP_STORAGE_PATH
+              value: '/data/backups'
+
+            # Redis (for flushing LiteLLM cache after model CRUD)
+            - name: REDIS_HOST
+              value: 'litellm-redis'
+            - name: REDIS_PORT
+              value: '6379'
+
+            # Backend API Rate Limiting (NOT for LLM requests)
+            - name: RATE_LIMIT_MAX
+              value: '1000'
+            - name: RATE_LIMIT_TIME_WINDOW
+              value: '5m'
+
+            # Default User Values Configuration
+            - name: DEFAULT_USER_MAX_BUDGET
+              value: '100'
+            - name: DEFAULT_USER_TPM_LIMIT
+              value: '100000'
+            - name: DEFAULT_USER_RPM_LIMIT
+              value: '120'
+
+            # TLS Configuration (conditional - only set if NODE_TLS_REJECT_UNAUTHORIZED=0)
+            ${NODE_TLS_ENV_BLOCK}
+
+          resources:
+            requests:
+              memory: '256Mi'
+              cpu: '100m'
+            limits:
+              memory: '512Mi'
+              cpu: '500m'
+
+          volumeMounts:
+            - name: backup-storage
+              mountPath: /data/backups
+
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health/live
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health/ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+      volumes:
+        - name: backup-storage
+          persistentVolumeClaim:
+            claimName: backend-backup
