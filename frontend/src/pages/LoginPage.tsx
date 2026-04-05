@@ -130,7 +130,6 @@ const LoginPage: React.FC = () => {
     <PFLoginPage
       brandImgSrc={brandImgSrc}
       brandImgAlt={t('pages.login.brandAlt')}
-      backgroundImgSrc="/bg.jpg"
       loginTitle={loginPageTitle}
       loginSubtitle={loginPageSubtitle}
     >
